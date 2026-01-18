@@ -9,20 +9,34 @@ class AudioStreamTTS:
         self.p = pyaudio.PyAudio()
         self.stream = None
 
-    def start(self, sample_rate: int, chunk_size: int) -> None:
+    def start(self, chunk_size: int) -> None:
         self.stream = self.p.open(
             format=pyaudio.paFloat32,
-            rate=sample_rate,
+            rate=self.tts.synthesizer.output_sample_rate,
             channels=1,
             frames_per_buffer=chunk_size,
             output=True,
         )
 
-    def synthesizing(self, text: str, wav: list[str], lang: str) -> None:
+    # def set_voice_cash(self, wav: list[str]) -> None:
+    #     self.gpt_cond_latent, self.speaker_embedding = self.tts.get_conditioning_latents(wav)
+
+    def synthesizing(
+        self,
+        text: str,
+        wav: list[str],
+        lang: str,
+        speed: float | None = None,
+        temperature: float | None = None,
+    ) -> None:
         audio = self.tts.tts(
             text=text,
-            speaker_wav=wav,
             language=lang,
+            speed=speed,
+            temperature=temperature,
+            speaker_wav=wav,
+            # gpt_cond_latent=self.gpt_cond_latent,
+            # speaker_embedding=self.speaker_embedding,
         )
         audio32 = np.asarray(audio, np.float32)
         self.stream.write(audio32.tobytes())
