@@ -2,9 +2,12 @@ import numpy as np
 import pyaudio
 from faster_whisper import WhisperModel
 
+
 class AudioStreamSTT:
     def __init__(self, model: str, device: str, type: str) -> None:
-        self.whisper = WhisperModel(model_size_or_path=model, device= device, compute_type=type)
+        self.whisper = WhisperModel(
+            model_size_or_path=model, device=device, compute_type=type
+        )
         self.p = pyaudio.PyAudio()
 
         self.stream = None
@@ -23,24 +26,21 @@ class AudioStreamSTT:
             input=True,
         )
 
-    def record(self, seconds: int) -> np.array:
-        frames = []
+    def record(self) -> bytes:
+        return self.stream.read(self.chunk, exception_on_overflow=False)
 
-        for _ in range(int(self.rate / self.chunk * seconds)):
-            frame = self.stream.read(self.chunk, exception_on_overflow=False)
-            frames.append(frame)
-
+    def bytes_to_array(self, frames: list[bytes]) -> np.ndarray:
         audio = np.frombuffer(b"".join(frames), dtype=np.float32)
         return audio
 
-    def transcribe(self, audio: np.array, lang: str) -> str:
+    def transcribe(self, audio: np.ndarray, lang: str) -> str:
         segment, _ = self.whisper.transcribe(
             audio=audio,
             language=lang,
             condition_on_previous_text=False,
-            vad_filter=True
+            vad_filter=True,
         )
-        return ' '.join(seg.text for seg in segment).strip()
+        return " ".join(seg.text for seg in segment).strip()
 
     def close(self) -> None:
         if self.stream is not None:

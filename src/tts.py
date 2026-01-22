@@ -28,7 +28,7 @@ class AudioStreamTTS:
         lang: str,
         speed: float | None = None,
         temperature: float | None = None,
-    ) -> None:
+    ) -> np.ndarray:
         audio = self.tts.tts(
             text=text,
             language=lang,
@@ -38,8 +38,14 @@ class AudioStreamTTS:
             # gpt_cond_latent=self.gpt_cond_latent,
             # speaker_embedding=self.speaker_embedding,
         )
-        audio32 = np.asarray(audio, np.float32)
-        self.stream.write(audio32.tobytes())
+        return audio
+
+    def array_to_bytes(self, audio: np.ndarray) -> bytes:
+        reply = np.asarray(audio, np.float32)
+        return reply.tobytes()
+
+    def voice(self, reply: bytes) -> None:
+        self.stream.write(reply)
 
     def close(self) -> None:
         if self.stream is not None:
